@@ -1,0 +1,664 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Cipher Lab — a fast, visual Caesar cipher encryptor, decryptor, and brute-force breaker." />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⌁</text></svg>" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <title>Cipher Lab — Caesar Cipher Tool</title>
+    <style>
+      :root {
+        --ink: #e8f0f4;
+        --ink-soft: #8c9ba5;
+        --ink-faint: #56656f;
+        --bg: #071014;
+        --bg-deep: #050a0d;
+        --panel: rgba(13, 25, 31, .78);
+        --panel-strong: rgba(17, 32, 39, .94);
+        --line: rgba(139, 169, 182, .15);
+        --line-strong: rgba(139, 169, 182, .27);
+        --cyan: #72e5e8;
+        --cyan-bright: #b2ffff;
+        --green: #a9edb8;
+        --green-deep: #3fd37f;
+        --purple: #b0a2ff;
+        --orange: #f7c47b;
+        --danger: #ff9191;
+        --sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+        --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+        --shadow: 0 22px 70px rgba(0, 0, 0, .30);
+        --radius: 18px;
+      }
+
+      * { box-sizing: border-box; }
+      html { scroll-behavior: smooth; background: var(--bg-deep); }
+      body {
+        min-width: 320px;
+        margin: 0;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at 12% 2%, rgba(84, 209, 210, .10), transparent 25rem),
+          radial-gradient(circle at 88% 13%, rgba(142, 113, 241, .11), transparent 27rem),
+          linear-gradient(145deg, #071014 0%, #081519 45%, #050b0e 100%);
+        font-family: var(--sans);
+        line-height: 1.5;
+      }
+
+      body::before {
+        position: fixed;
+        z-index: -1;
+        inset: 0;
+        pointer-events: none;
+        content: "";
+        opacity: .23;
+        background-image: linear-gradient(rgba(119, 182, 192, .045) 1px, transparent 1px), linear-gradient(90deg, rgba(119, 182, 192, .045) 1px, transparent 1px);
+        background-size: 70px 70px;
+        mask-image: linear-gradient(to bottom, black, transparent 75%);
+      }
+
+      body::after {
+        position: fixed;
+        z-index: -1;
+        top: -10rem;
+        right: 7%;
+        width: 26rem;
+        height: 26rem;
+        pointer-events: none;
+        content: "";
+        border: 1px solid rgba(114, 229, 232, .10);
+        border-radius: 50%;
+        box-shadow: 0 0 0 4rem rgba(114, 229, 232, .025), 0 0 0 8rem rgba(114, 229, 232, .018);
+        animation: orbit 17s ease-in-out infinite alternate;
+      }
+
+      button, input, textarea { font: inherit; }
+      button { cursor: pointer; }
+      button:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; }
+
+      .site-header {
+        position: sticky;
+        z-index: 10;
+        top: 0;
+        border-bottom: 1px solid rgba(139, 169, 182, .11);
+        background: rgba(5, 12, 15, .82);
+        backdrop-filter: blur(20px);
+      }
+      .nav-shell, .page-shell { width: min(1160px, calc(100% - 40px)); margin: 0 auto; }
+      .nav-shell { display: flex; align-items: center; justify-content: space-between; min-height: 72px; gap: 24px; }
+      .brand { display: inline-flex; align-items: center; gap: 11px; color: var(--ink); text-decoration: none; }
+      .brand-mark {
+        display: grid;
+        width: 34px;
+        height: 34px;
+        place-items: center;
+        color: #061316;
+        border-radius: 10px;
+        background: linear-gradient(135deg, var(--cyan-bright), var(--cyan));
+        box-shadow: 0 0 22px rgba(114, 229, 232, .26);
+        font-family: var(--mono);
+        font-size: 15px;
+        font-weight: 700;
+      }
+      .brand-copy { display: grid; gap: 1px; }
+      .brand-copy strong { font-size: 14px; letter-spacing: .08em; text-transform: uppercase; }
+      .brand-copy span { color: var(--ink-faint); font-family: var(--mono); font-size: 9px; letter-spacing: .18em; text-transform: uppercase; }
+      .tab-nav { display: flex; align-self: stretch; gap: 3px; }
+      .tab-button {
+        position: relative;
+        padding: 0 17px;
+        color: var(--ink-soft);
+        border: 0;
+        background: transparent;
+        font-family: var(--mono);
+        font-size: 11px;
+        letter-spacing: .03em;
+        transition: color .2s ease, transform .2s ease;
+      }
+      .tab-button::after { position: absolute; right: 17px; bottom: 0; left: 17px; height: 2px; content: ""; border-radius: 2px 2px 0 0; background: var(--cyan); opacity: 0; transform: scaleX(.3); transition: opacity .25s ease, transform .25s ease; }
+      .tab-button:hover { color: var(--ink); transform: translateY(-1px); }
+      .tab-button.is-active { color: var(--cyan-bright); }
+      .tab-button.is-active::after { opacity: 1; transform: scaleX(1); }
+
+      .hero { position: relative; padding: 74px 0 42px; overflow: hidden; }
+      .hero::before { position: absolute; top: 24px; left: 43%; width: 220px; height: 220px; content: ""; border: 1px solid rgba(114, 229, 232, .11); border-radius: 50%; transform: translateX(-50%); animation: breathe 7s ease-in-out infinite; }
+      .eyebrow { display: flex; align-items: center; gap: 10px; margin: 0 0 18px; color: var(--cyan); font-family: var(--mono); font-size: 10px; letter-spacing: .22em; text-transform: uppercase; }
+      .eyebrow::before { width: 24px; height: 1px; content: ""; background: var(--cyan); box-shadow: 0 0 12px var(--cyan); }
+      h1 { max-width: 780px; margin: 0; color: #f3f8f8; font-size: clamp(42px, 7vw, 82px); font-weight: 600; letter-spacing: -.075em; line-height: .98; }
+      h1 em { color: var(--cyan); font-style: normal; }
+      .hero-bottom { display: flex; align-items: end; justify-content: space-between; gap: 30px; margin-top: 25px; }
+      .tagline { max-width: 560px; margin: 0; color: var(--ink-soft); font-size: 16px; }
+      .hero-code { color: var(--ink-faint); font-family: var(--mono); font-size: 11px; line-height: 1.8; text-align: right; }
+      .hero-code span { color: var(--green-deep); }
+
+      .tool-shell { position: relative; margin-bottom: 72px; }
+      .tab-panel { display: none; animation: panel-in .36s ease both; }
+      .tab-panel.is-visible { display: block; }
+      .workspace-grid { display: grid; grid-template-columns: minmax(0, .92fr) minmax(0, 1.08fr); gap: 16px; }
+      .panel-card { position: relative; border: 1px solid var(--line); border-radius: var(--radius); background: linear-gradient(145deg, rgba(18, 35, 43, .86), rgba(10, 20, 25, .80)); box-shadow: var(--shadow); overflow: hidden; }
+      .panel-card::before { position: absolute; top: 0; right: 14%; left: 14%; height: 1px; content: ""; background: linear-gradient(90deg, transparent, rgba(114, 229, 232, .38), transparent); }
+      .card-pad { padding: 26px; }
+      .card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 24px; }
+      .section-kicker { margin: 0 0 7px; color: var(--cyan); font-family: var(--mono); font-size: 10px; letter-spacing: .16em; text-transform: uppercase; }
+      h2 { margin: 0; color: #f0f6f6; font-size: 22px; letter-spacing: -.03em; }
+      .card-intro { margin: 8px 0 0; color: var(--ink-soft); font-size: 13px; }
+      .part-mark { color: var(--ink-faint); font-family: var(--mono); font-size: 10px; letter-spacing: .13em; }
+      .field { margin-bottom: 22px; }
+      .field-label { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 9px; color: var(--ink-soft); font-family: var(--mono); font-size: 10px; letter-spacing: .13em; text-transform: uppercase; }
+      .field-hint { color: var(--ink-faint); font-size: 10px; letter-spacing: 0; text-transform: none; }
+      .preset-row { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; margin-top: 9px; }
+      .preset-label { margin-right: 3px; color: var(--ink-faint); font-family: var(--mono); font-size: 9px; letter-spacing: .08em; text-transform: uppercase; }
+      .preset-button { padding: 5px 8px; color: var(--ink-soft); border: 1px solid var(--line); border-radius: 5px; background: rgba(114, 229, 232, .035); font-family: var(--mono); font-size: 9px; transition: color .2s ease, border-color .2s ease, background .2s ease, transform .2s ease; }
+      .preset-button:hover { color: var(--cyan-bright); border-color: rgba(114, 229, 232, .5); background: rgba(114, 229, 232, .09); transform: translateY(-1px); }
+      textarea, input[type="number"] { width: 100%; color: var(--ink); border: 1px solid var(--line); border-radius: 11px; background: rgba(2, 8, 11, .54); transition: border-color .2s ease, box-shadow .2s ease, background .2s ease; }
+      textarea { min-height: 166px; padding: 15px; resize: vertical; font-family: var(--mono); font-size: 13px; line-height: 1.75; }
+      textarea::placeholder { color: #52636c; }
+      textarea:hover, input[type="number"]:hover { border-color: var(--line-strong); }
+      textarea:focus, input[type="number"]:focus { border-color: rgba(114, 229, 232, .72); background: rgba(3, 13, 16, .72); box-shadow: 0 0 0 3px rgba(114, 229, 232, .08), 0 0 25px rgba(114, 229, 232, .07); outline: none; }
+      .key-control { display: grid; grid-template-columns: 72px 1fr; align-items: center; gap: 17px; }
+      input[type="number"] { height: 42px; padding: 0 12px; font-family: var(--mono); font-size: 14px; }
+      input[type="range"] { width: 100%; accent-color: var(--cyan); cursor: pointer; }
+      .range-meta { display: flex; justify-content: space-between; margin-top: 5px; color: var(--ink-faint); font-family: var(--mono); font-size: 9px; }
+      .key-readout { color: var(--cyan-bright); font-family: var(--mono); font-size: 12px; }
+      .action-row { display: flex; align-items: center; gap: 10px; margin-top: 28px; }
+      .primary-button, .ghost-button { display: inline-flex; align-items: center; justify-content: center; gap: 9px; min-height: 43px; border-radius: 10px; font-family: var(--mono); font-size: 11px; letter-spacing: .02em; transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease, background .2s ease; }
+      .primary-button { padding: 0 18px; color: #061113; border: 1px solid var(--cyan); background: var(--cyan); box-shadow: 0 7px 24px rgba(114, 229, 232, .15); }
+      .primary-button:hover { box-shadow: 0 10px 28px rgba(114, 229, 232, .3); transform: translateY(-2px); }
+      .primary-button:active { transform: translateY(1px) scale(.98); }
+      .primary-button[disabled] { cursor: wait; opacity: .65; }
+      .ghost-button { padding: 0 14px; color: var(--ink-soft); border: 1px solid var(--line-strong); background: rgba(18, 34, 41, .55); }
+      .ghost-button:hover { color: var(--cyan-bright); border-color: rgba(114, 229, 232, .56); background: rgba(114, 229, 232, .08); transform: translateY(-1px); }
+      .button-icon { font-size: 14px; }
+      .output-card { min-height: 100%; display: flex; flex-direction: column; }
+      .output-card .card-pad { display: flex; flex: 1; flex-direction: column; }
+      .output-topline { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+      .output-status { display: inline-flex; align-items: center; gap: 7px; color: var(--ink-faint); font-family: var(--mono); font-size: 10px; }
+      .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--ink-faint); }
+      .status-dot.is-ready { background: var(--green-deep); box-shadow: 0 0 10px var(--green-deep); }
+      .output-box { display: flex; flex: 1; flex-direction: column; justify-content: center; min-height: 278px; padding: 22px; border: 1px solid var(--line); border-radius: 12px; background: rgba(3, 9, 12, .58); }
+      .output-text { min-height: 92px; color: var(--cyan-bright); font-family: var(--mono); font-size: 14px; line-height: 1.8; white-space: pre-wrap; word-break: break-word; }
+      .output-text.is-empty { color: #51646d; }
+      .output-placeholder { display: grid; place-items: center; gap: 8px; min-height: 96px; color: var(--ink-faint); font-family: var(--mono); font-size: 11px; text-align: center; }
+      .output-placeholder strong { color: #73858e; font-weight: 500; }
+      .char { display: inline-block; opacity: 0; animation: char-in .34s cubic-bezier(.2,.8,.2,1) forwards; }
+      .output-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 13px; color: var(--ink-faint); font-family: var(--mono); font-size: 10px; }
+      .preview-strip { display: none; margin-top: 14px; padding: 12px 14px; border-left: 2px solid var(--purple); border-radius: 0 8px 8px 0; background: rgba(176, 162, 255, .06); color: var(--ink-soft); font-family: var(--mono); font-size: 10px; line-height: 1.8; }
+      .preview-strip.is-visible { display: block; animation: panel-in .35s ease both; }
+      .preview-label { display: block; margin-bottom: 4px; color: var(--purple); font-size: 9px; letter-spacing: .14em; text-transform: uppercase; }
+      .preview-original { color: var(--ink-faint); }
+      .preview-arrow { padding: 0 7px; color: var(--purple); }
+
+      .breaker-top { display: grid; grid-template-columns: minmax(0, .96fr) minmax(240px, .62fr); gap: 16px; }
+      .breaker-input .card-pad { display: flex; flex-direction: column; height: 100%; }
+      .breaker-input textarea { min-height: 140px; }
+      .scan-card { position: relative; display: flex; flex-direction: column; justify-content: space-between; min-height: 100%; padding: 25px; border: 1px solid rgba(176, 162, 255, .20); border-radius: var(--radius); background: linear-gradient(145deg, rgba(42, 32, 68, .50), rgba(15, 25, 37, .72)); overflow: hidden; }
+      .scan-card::before { position: absolute; top: 0; right: 0; bottom: 0; left: 0; content: ""; opacity: .3; background: repeating-linear-gradient(0deg, transparent, transparent 8px, rgba(176, 162, 255, .04) 9px); pointer-events: none; }
+      .scan-card.is-scanning::after { position: absolute; top: -10%; bottom: -10%; left: 0; width: 22%; content: ""; background: linear-gradient(90deg, transparent, rgba(176, 162, 255, .2), transparent); animation: scan 1.05s ease-in-out infinite; }
+      .scan-label { position: relative; z-index: 1; color: var(--purple); font-family: var(--mono); font-size: 10px; letter-spacing: .14em; text-transform: uppercase; }
+      .scan-count { position: relative; z-index: 1; margin: 18px 0 4px; color: #efeaff; font-family: var(--mono); font-size: clamp(28px, 4vw, 45px); font-weight: 500; letter-spacing: -.06em; }
+      .scan-copy { position: relative; z-index: 1; margin: 0; color: #aca6bd; font-size: 12px; }
+      .scan-line { position: relative; z-index: 1; height: 4px; margin-top: 28px; overflow: hidden; border-radius: 3px; background: rgba(176, 162, 255, .14); }
+      .scan-line span { display: block; width: 0%; height: 100%; border-radius: inherit; background: var(--purple); box-shadow: 0 0 13px var(--purple); transition: width .24s ease; }
+      .break-section { margin-top: 16px; }
+      .summary-card { display: none; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 14px; padding: 19px 22px; border: 1px solid rgba(63, 211, 127, .34); border-radius: 15px; background: linear-gradient(100deg, rgba(38, 84, 61, .40), rgba(10, 27, 25, .75)); box-shadow: 0 12px 36px rgba(31, 161, 99, .08); }
+      .summary-card.is-visible { display: flex; animation: summary-in .5s cubic-bezier(.2,.8,.2,1) both; }
+      .summary-copy { min-width: 0; }
+      .summary-label { display: flex; align-items: center; gap: 7px; margin-bottom: 7px; color: var(--green); font-family: var(--mono); font-size: 10px; letter-spacing: .15em; text-transform: uppercase; }
+      .checkmark { display: grid; width: 18px; height: 18px; place-items: center; color: #08150e; border-radius: 50%; background: var(--green); font-size: 11px; font-weight: 700; }
+      .summary-result { overflow: hidden; color: #f0fff5; font-family: var(--mono); font-size: 15px; text-overflow: ellipsis; white-space: nowrap; }
+      .summary-key { margin-top: 5px; color: var(--green); font-family: var(--mono); font-size: 10px; }
+      .results-card { padding: 0; overflow: hidden; }
+      .results-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 19px 22px; border-bottom: 1px solid var(--line); }
+      .results-title { margin: 0; color: var(--ink); font-size: 14px; font-weight: 600; }
+      .results-hint { color: var(--ink-faint); font-family: var(--mono); font-size: 10px; }
+      .results-scroll { max-height: 454px; overflow: auto; }
+      .results-scroll::-webkit-scrollbar { width: 7px; }
+      .results-scroll::-webkit-scrollbar-thumb { border-radius: 10px; background: rgba(139, 169, 182, .18); }
+      .results-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+      .results-table th { position: sticky; top: 0; z-index: 1; padding: 12px 22px; color: var(--ink-faint); background: #101e23; font-family: var(--mono); font-size: 9px; font-weight: 500; letter-spacing: .13em; text-align: left; text-transform: uppercase; }
+      .results-table th:first-child, .results-table td:first-child { width: 96px; }
+      .results-table td { padding: 14px 22px; border-top: 1px solid rgba(139, 169, 182, .08); color: var(--ink-soft); font-family: var(--mono); font-size: 12px; vertical-align: middle; }
+      .results-table tbody tr { opacity: 0; transform: translateY(7px); animation: row-in .38s ease forwards; transition: background .2s ease; }
+      .results-table tbody tr:hover { background: rgba(114, 229, 232, .045); }
+      .results-table tbody tr.is-likely { background: rgba(63, 211, 127, .115); }
+      .results-table tbody tr.is-likely td { color: #d9f8e1; border-top-color: rgba(63, 211, 127, .22); }
+      .key-pill { display: inline-flex; min-width: 31px; align-items: center; justify-content: center; padding: 4px 7px; color: var(--cyan); border: 1px solid rgba(114, 229, 232, .22); border-radius: 5px; background: rgba(114, 229, 232, .07); font-size: 10px; }
+      .likely-badge { display: inline-flex; align-items: center; gap: 6px; margin-left: 10px; padding: 3px 7px; color: var(--green); border: 1px solid rgba(63, 211, 127, .30); border-radius: 4px; background: rgba(63, 211, 127, .11); font-size: 9px; letter-spacing: .02em; white-space: nowrap; }
+      .frequency-card { display: none; margin-bottom: 14px; padding: 20px 22px; border: 1px solid rgba(114, 229, 232, .19); border-radius: 15px; background: linear-gradient(110deg, rgba(20, 50, 56, .44), rgba(10, 25, 31, .78)); }
+      .frequency-card.is-visible { display: block; animation: summary-in .45s cubic-bezier(.2,.8,.2,1) both; }
+      .frequency-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 17px; }
+      .frequency-title { margin: 0; color: var(--ink); font-size: 14px; font-weight: 600; }
+      .frequency-subtitle { margin: 4px 0 0; color: var(--ink-faint); font-family: var(--mono); font-size: 10px; }
+      .frequency-total { color: var(--cyan); font-family: var(--mono); font-size: 10px; white-space: nowrap; }
+      .frequency-bars { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px 20px; }
+      .frequency-row { display: grid; grid-template-columns: 20px 1fr 27px; align-items: center; gap: 8px; }
+      .frequency-letter, .frequency-count { color: var(--cyan-bright); font-family: var(--mono); font-size: 10px; }
+      .frequency-count { color: var(--ink-faint); text-align: right; }
+      .frequency-track { height: 6px; overflow: hidden; border-radius: 5px; background: rgba(114, 229, 232, .10); }
+      .frequency-track span { display: block; width: 0; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--cyan), var(--purple)); box-shadow: 0 0 10px rgba(114, 229, 232, .24); animation: frequency-in .55s cubic-bezier(.2,.8,.2,1) forwards; transform-origin: left; }
+      .frequency-footnote { margin: 15px 0 0; color: var(--ink-faint); font-size: 11px; }
+      .frequency-empty { color: var(--ink-faint); font-family: var(--mono); font-size: 10px; }
+      .why-note { display: flex; align-items: flex-start; gap: 12px; margin-top: 17px; padding: 16px 18px; border: 1px solid rgba(247, 196, 123, .17); border-radius: 12px; background: rgba(247, 196, 123, .045); color: #bca98e; font-size: 12px; }
+      .why-note strong { display: block; margin-bottom: 4px; color: var(--orange); font-family: var(--mono); font-size: 10px; letter-spacing: .13em; text-transform: uppercase; }
+      .why-icon { color: var(--orange); font-family: var(--mono); font-size: 17px; }
+
+      .about { margin-bottom: 70px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+      .about summary { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 23px 0; color: var(--ink); cursor: pointer; list-style: none; }
+      .about summary::-webkit-details-marker { display: none; }
+      .about summary::after { color: var(--cyan); content: "+"; font-family: var(--mono); font-size: 18px; transition: transform .25s ease; }
+      .about[open] summary::after { transform: rotate(45deg); }
+      .about-title { display: flex; align-items: center; gap: 12px; font-size: 15px; font-weight: 600; }
+      .about-title span { color: var(--cyan); font-family: var(--mono); font-size: 10px; font-weight: 500; letter-spacing: .16em; text-transform: uppercase; }
+      .about-content { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(230px, .7fr); gap: 38px; padding: 0 0 27px; animation: panel-in .3s ease both; }
+      .about-content p { margin: 0; color: var(--ink-soft); font-size: 13px; }
+      .formula-stack { display: grid; gap: 8px; }
+      .formula { padding: 13px 15px; border: 1px solid var(--line); border-radius: 8px; color: var(--cyan-bright); background: rgba(4, 12, 15, .45); font-family: var(--mono); font-size: 13px; }
+      .formula small { margin-left: 10px; color: var(--ink-faint); font-family: var(--sans); font-size: 10px; }
+      footer { padding: 0 0 36px; color: var(--ink-faint); font-family: var(--mono); font-size: 10px; text-align: center; }
+      .footer-accent { color: var(--ink-soft); }
+      .toast { position: fixed; z-index: 30; right: 22px; bottom: 22px; display: flex; align-items: center; gap: 10px; min-width: 210px; padding: 13px 15px; color: #dfffea; border: 1px solid rgba(63, 211, 127, .35); border-radius: 10px; background: rgba(8, 25, 18, .92); box-shadow: 0 14px 36px rgba(0, 0, 0, .3); font-family: var(--mono); font-size: 11px; opacity: 0; pointer-events: none; transform: translateY(12px); transition: opacity .25s ease, transform .25s ease; }
+      .toast.is-visible { opacity: 1; transform: translateY(0); }
+      .toast-mark { color: var(--green); font-size: 14px; }
+      .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+
+      @keyframes panel-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+      @keyframes char-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+      @keyframes row-in { to { opacity: 1; transform: translateY(0); } }
+      @keyframes summary-in { from { opacity: 0; transform: translateY(10px) scale(.99); } to { opacity: 1; transform: translateY(0) scale(1); } }
+      @keyframes frequency-in { from { opacity: .35; transform: scaleX(.1); } to { opacity: 1; transform: scaleX(1); } }
+      @keyframes scan { from { transform: translateX(-140%); } to { transform: translateX(580%); } }
+      @keyframes breathe { 0%, 100% { opacity: .45; transform: translateX(-50%) scale(.96); } 50% { opacity: .9; transform: translateX(-50%) scale(1.08); } }
+      @keyframes orbit { from { transform: translate(0, 0) rotate(0deg); } to { transform: translate(-30px, 24px) rotate(18deg); } }
+
+      @media (max-width: 800px) {
+        .nav-shell, .page-shell { width: min(100% - 28px, 620px); }
+        .nav-shell { align-items: flex-start; flex-direction: column; gap: 0; padding-top: 13px; }
+        .tab-nav { width: calc(100% + 4px); min-height: 48px; overflow: auto; }
+        .tab-button { padding: 0 12px; white-space: nowrap; }
+        .tab-button::after { right: 12px; left: 12px; }
+        .hero { padding-top: 52px; }
+        .hero-bottom { align-items: flex-start; flex-direction: column; gap: 18px; }
+        .hero-code { text-align: left; }
+        .workspace-grid, .breaker-top, .about-content { grid-template-columns: 1fr; }
+        .output-box { min-height: 240px; }
+        .about-content { gap: 20px; }
+      }
+      @media (max-width: 500px) {
+        .card-pad { padding: 20px; }
+        h1 { font-size: 45px; }
+        .results-table th, .results-table td { padding-right: 13px; padding-left: 13px; }
+        .results-table th:first-child, .results-table td:first-child { width: 68px; }
+        .likely-badge { display: none; }
+        .summary-card { align-items: flex-start; flex-direction: column; }
+        .summary-result { max-width: 100%; white-space: normal; }
+        .frequency-bars { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+        .action-row { flex-wrap: wrap; }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="site-header" data-testid="site-header">
+      <div class="nav-shell">
+        <a class="brand" href="#top" data-testid="brand-home-link">
+          <span class="brand-mark">⌁</span>
+          <span class="brand-copy"><strong>Cipher Lab</strong><span>Caesar cipher tool</span></span>
+        </a>
+        <nav class="tab-nav" aria-label="Cipher modes" data-testid="cipher-mode-navigation">
+          <button class="tab-button is-active" type="button" data-tab="encrypt" data-testid="encrypt-tab-button">01 / Encrypt</button>
+          <button class="tab-button" type="button" data-tab="decrypt" data-testid="decrypt-tab-button">02 / Decrypt</button>
+          <button class="tab-button" type="button" data-tab="breaker" data-testid="brute-force-tab-button">03 / Brute force</button>
+        </nav>
+      </div>
+    </header>
+
+    <main id="top" class="page-shell" data-testid="app-shell">
+      <section class="hero" aria-labelledby="hero-title" data-testid="hero-header">
+        <p class="eyebrow" data-testid="hero-eyebrow">Classical cryptography / 26 states</p>
+        <h1 id="hero-title">Encrypt. Decrypt.<br /><em>Break.</em></h1>
+        <div class="hero-bottom">
+          <p class="tagline" data-testid="hero-tagline">Classical Cryptography, Reimagined — a visual workbench for the cipher that started it all.</p>
+          <div class="hero-code" data-testid="hero-status"><span>●</span> LOCAL ENGINE / ONLINE<br />NO DATA LEAVES THIS DEVICE</div>
+        </div>
+      </section>
+
+      <section class="tool-shell" aria-label="Cipher tools">
+        <section class="tab-panel is-visible" data-panel="encrypt" aria-labelledby="encrypt-heading" data-testid="encrypt-panel">
+          <div class="workspace-grid">
+            <article class="panel-card" data-testid="encrypt-input-card">
+              <div class="card-pad">
+                <div class="card-header">
+                  <div><p class="section-kicker">Part A / encode</p><h2 id="encrypt-heading">Encrypt a message</h2><p class="card-intro">Shift each letter forward by a known key.</p></div>
+                  <span class="part-mark">E(x)</span>
+                </div>
+                <div class="field">
+                  <label class="field-label" for="encrypt-input">Plaintext <span class="field-hint">demo-ready</span></label>
+                  <textarea id="encrypt-input" data-testid="encrypt-input" placeholder="Try: meet me at the library at nine."></textarea>
+                  <div class="preset-row" aria-label="Encryption demo presets"><span class="preset-label">Demo preset</span><button class="preset-button" type="button" data-demo-mode="encrypt" data-demo-text="Hello world" data-demo-key="3" data-testid="encrypt-demo-hello-button">Hello world / K3</button><button class="preset-button" type="button" data-demo-mode="encrypt" data-demo-text="Meet me at nine" data-demo-key="3" data-testid="encrypt-demo-meet-button">Meet me / K3</button></div>
+                </div>
+                <div class="field">
+                  <label class="field-label" for="encrypt-key-number">Shift key <span class="key-readout" id="encrypt-key-readout">K = 3</span></label>
+                  <div class="key-control">
+                    <input id="encrypt-key-number" type="number" min="0" max="25" value="3" data-key-number="encrypt" data-testid="encrypt-key-number" />
+                    <input id="encrypt-key-range" type="range" min="0" max="25" value="3" data-key-range="encrypt" aria-label="Encryption key slider" data-testid="encrypt-key-slider" />
+                  </div>
+                  <div class="range-meta"><span>0 / no shift</span><span>25 / max shift</span></div>
+                </div>
+                <div class="action-row"><button class="primary-button" type="button" id="encrypt-button" data-testid="encrypt-submit-button"><span class="button-icon">↗</span> Encrypt message</button></div>
+              </div>
+            </article>
+
+            <article class="panel-card output-card" data-testid="encrypt-output-card">
+              <div class="card-pad">
+                <div class="card-header"><div><p class="section-kicker">Output / ciphertext</p><h2>Shifted result</h2></div><span class="output-status"><span class="status-dot" id="encrypt-status-dot"></span><span id="encrypt-status">waiting</span></span></div>
+                <div class="output-box"><div class="output-text is-empty" id="encrypt-output" data-testid="encrypt-output"><div class="output-placeholder"><strong>Your ciphertext will appear here</strong><span>Characters stay in position. Punctuation stays untouched.</span></div></div><div class="preview-strip" id="encrypt-preview" data-testid="encrypt-live-preview"></div></div>
+                <div class="output-footer"><span id="encrypt-output-meta">0 characters</span><button class="ghost-button" type="button" data-copy-target="encrypt-output" data-testid="encrypt-copy-button"><span class="button-icon">⧉</span> Copy result</button></div>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="tab-panel" data-panel="decrypt" aria-labelledby="decrypt-heading" data-testid="decrypt-panel">
+          <div class="workspace-grid">
+            <article class="panel-card" data-testid="decrypt-input-card">
+              <div class="card-pad">
+                <div class="card-header"><div><p class="section-kicker">Part B / decode</p><h2 id="decrypt-heading">Decrypt a message</h2><p class="card-intro">Reverse a shift when the key is already known.</p></div><span class="part-mark">D(x)</span></div>
+                <div class="field"><label class="field-label" for="decrypt-input">Ciphertext <span class="field-hint">known key required</span></label><textarea id="decrypt-input" data-testid="decrypt-input" placeholder="Try: phhw ph dw wkh oleudub dw qlqh."></textarea><div class="preset-row" aria-label="Decryption demo presets"><span class="preset-label">Demo preset</span><button class="preset-button" type="button" data-demo-mode="decrypt" data-demo-text="Khoor zruog" data-demo-key="3" data-testid="decrypt-demo-hello-button">Hello world / K3</button><button class="preset-button" type="button" data-demo-mode="decrypt" data-demo-text="Phhw ph dw qlqh" data-demo-key="3" data-testid="decrypt-demo-meet-button">Meet me / K3</button></div></div>
+                <div class="field"><label class="field-label" for="decrypt-key-number">Known key <span class="key-readout" id="decrypt-key-readout">K = 3</span></label><div class="key-control"><input id="decrypt-key-number" type="number" min="0" max="25" value="3" data-key-number="decrypt" data-testid="decrypt-key-number" /><input id="decrypt-key-range" type="range" min="0" max="25" value="3" data-key-range="decrypt" aria-label="Decryption key slider" data-testid="decrypt-key-slider" /></div><div class="range-meta"><span>0 / no shift</span><span>25 / max shift</span></div></div>
+                <div class="action-row"><button class="primary-button" type="button" id="decrypt-button" data-testid="decrypt-submit-button"><span class="button-icon">↙</span> Decrypt message</button></div>
+              </div>
+            </article>
+            <article class="panel-card output-card" data-testid="decrypt-output-card">
+              <div class="card-pad"><div class="card-header"><div><p class="section-kicker">Output / plaintext</p><h2>Recovered result</h2></div><span class="output-status"><span class="status-dot" id="decrypt-status-dot"></span><span id="decrypt-status">waiting</span></span></div><div class="output-box"><div class="output-text is-empty" id="decrypt-output" data-testid="decrypt-output"><div class="output-placeholder"><strong>Your plaintext will appear here</strong><span>Letter case, spacing, and punctuation are preserved.</span></div></div></div><div class="output-footer"><span id="decrypt-output-meta">0 characters</span><button class="ghost-button" type="button" data-copy-target="decrypt-output" data-testid="decrypt-copy-button"><span class="button-icon">⧉</span> Copy result</button></div></div>
+            </article>
+          </div>
+        </section>
+
+        <section class="tab-panel" data-panel="breaker" aria-labelledby="breaker-heading" data-testid="breaker-panel">
+          <div class="breaker-top">
+            <article class="panel-card breaker-input" data-testid="breaker-input-card"><div class="card-pad"><div class="card-header"><div><p class="section-kicker">Part C / attack surface</p><h2 id="breaker-heading">Brute-force breaker</h2><p class="card-intro">No key? Scan every possible shift and let the language heuristic rank them.</p></div><span class="part-mark">26 ×</span></div><div class="field"><label class="field-label" for="breaker-input">Ciphertext <span class="field-hint">key unknown</span></label><textarea id="breaker-input" data-testid="breaker-input" placeholder="Try: khoor zruog — the answer is somewhere in here."></textarea><div class="preset-row" aria-label="Brute-force demo presets"><span class="preset-label">Demo preset</span><button class="preset-button" type="button" data-demo-mode="breaker" data-demo-text="Khoor zruog" data-testid="breaker-demo-hello-button">Hello world</button><button class="preset-button" type="button" data-demo-mode="breaker" data-demo-text="Phhw ph dw qlqh" data-testid="breaker-demo-meet-button">Meet me</button></div></div><div class="action-row"><button class="primary-button" type="button" id="breaker-button" data-testid="brute-force-submit-button"><span class="button-icon">⌁</span> Break cipher</button></div></div></article>
+            <aside class="scan-card" id="scan-card" data-testid="scan-status-card"><div class="scan-label">Live key scan</div><div><div class="scan-count" id="scan-count" data-testid="scan-counter">0/26</div><p class="scan-copy" id="scan-copy">Waiting for ciphertext input.</p></div><div class="scan-line"><span id="scan-progress"></span></div></aside>
+          </div>
+          <div class="break-section">
+            <div class="summary-card" id="summary-card" data-testid="likely-plaintext-summary"><div class="summary-copy"><div class="summary-label"><span class="checkmark">✓</span> Most likely plaintext</div><div class="summary-result" id="summary-result" data-testid="likely-plaintext-result"></div><div class="summary-key" id="summary-key"></div></div><button class="ghost-button" type="button" data-copy-target="summary-result" data-testid="likely-plaintext-copy-button">⧉ Copy</button></div>
+            <article class="frequency-card" id="frequency-card" data-testid="frequency-view"><div class="frequency-header"><div><h3 class="frequency-title">Letter frequency / input signal</h3><p class="frequency-subtitle">The most common letters in the ciphertext</p></div><span class="frequency-total" id="frequency-total" data-testid="frequency-total">0 letters</span></div><div class="frequency-bars" id="frequency-bars" data-testid="frequency-bars"><span class="frequency-empty">Run a scan to analyze the letter pattern.</span></div><p class="frequency-footnote">Frequency is a useful clue, but short messages can mislead — the language score makes the final call.</p></article>
+            <article class="panel-card results-card" data-testid="brute-force-results-card"><div class="results-header"><h3 class="results-title">All candidate plaintexts</h3><span class="results-hint" id="results-hint">Run a scan to populate</span></div><div class="results-scroll"><table class="results-table"><thead><tr><th scope="col">Key</th><th scope="col">Resulting plaintext</th></tr></thead><tbody id="results-body"><tr><td colspan="2" class="empty-results" data-testid="results-empty-state">26 possible worlds. One click to see them all.</td></tr></tbody></table></div></article>
+            <div class="why-note" data-testid="why-brute-force-note"><span class="why-icon">?</span><div><strong>Why this works</strong>Caesar Cipher only has 26 possible keys, so a complete brute-force scan is instant. Cipher Lab ranks each result with common English words and letter patterns — no external API, no guesswork in the cloud.</div></div>
+          </div>
+        </section>
+      </section>
+
+      <details class="about" data-testid="about-how-it-works">
+        <summary data-testid="about-toggle"><span class="about-title"><span>Readme / viva note</span>How does Caesar Cipher work?</span></summary>
+        <div class="about-content"><p>A Caesar Cipher moves every letter through the alphabet by the same number of places. A key of 3 turns A into D, B into E, and so on. When the alphabet ends, the shift wraps back to its beginning. Spaces, numbers, and punctuation are never moved.</p><div class="formula-stack"><div class="formula">E(x) = (x + k) mod 26 <small>encrypt / move forward</small></div><div class="formula">D(x) = (x − k) mod 26 <small>decrypt / move backward</small></div></div></div>
+      </details>
+    </main>
+
+    <footer data-testid="site-footer">Caesar Cipher Project — <span class="footer-accent">Cryptography &amp; Network Security</span><br />Mohan S (U18GO24S0055) &amp; Mohammed Kaif (U18GO24S0051)</footer>
+    <div class="toast" id="toast" role="status" aria-live="polite" data-testid="copy-toast"><span class="toast-mark">✓</span><span id="toast-message">Copied to clipboard</span></div>
+
+    <script>
+      (function () {
+        "use strict";
+
+        var alphabetSize = 26;
+        var toastTimer;
+
+        function normaliseKey(value) {
+          var parsed = Number.parseInt(value, 10);
+          if (!Number.isFinite(parsed)) return 0;
+          return Math.max(0, Math.min(25, parsed));
+        }
+
+        function shiftText(text, key) {
+          var shift = key;
+          return Array.from(text).map(function (character) {
+            var code = character.charCodeAt(0);
+            if (code >= 65 && code <= 90) return String.fromCharCode(((code - 65 + shift) % alphabetSize) + 65);
+            if (code >= 97 && code <= 122) return String.fromCharCode(((code - 97 + shift) % alphabetSize) + 97);
+            return character;
+          }).join("");
+        }
+
+        function decryptText(text, key) {
+          return shiftText(text, (alphabetSize - key) % alphabetSize);
+        }
+
+        function getElement(id) { return document.getElementById(id); }
+
+        function setKey(mode, value) {
+          var key = normaliseKey(value);
+          getElement(mode + "-key-number").value = key;
+          getElement(mode + "-key-range").value = key;
+          getElement(mode + "-key-readout").textContent = "K = " + key;
+          return key;
+        }
+
+        ["encrypt", "decrypt"].forEach(function (mode) {
+          getElement(mode + "-key-number").addEventListener("input", function (event) { setKey(mode, event.target.value); });
+          getElement(mode + "-key-range").addEventListener("input", function (event) { setKey(mode, event.target.value); });
+        });
+
+        document.querySelectorAll("[data-demo-mode]").forEach(function (button) {
+          button.addEventListener("click", function () {
+            var mode = button.getAttribute("data-demo-mode");
+            getElement(mode + "-input").value = button.getAttribute("data-demo-text") || "";
+            if (mode !== "breaker") setKey(mode, button.getAttribute("data-demo-key") || "3");
+            getElement(mode + "-input").focus();
+            showToast("Demo preset loaded");
+          });
+        });
+
+        document.querySelectorAll("[data-tab]").forEach(function (button) {
+          button.addEventListener("click", function () {
+            var target = button.getAttribute("data-tab");
+            document.querySelectorAll("[data-tab]").forEach(function (tab) { tab.classList.toggle("is-active", tab === button); });
+            document.querySelectorAll("[data-panel]").forEach(function (panel) { panel.classList.toggle("is-visible", panel.getAttribute("data-panel") === target); });
+          });
+        });
+
+        function showOutput(mode, text, key, withPreview) {
+          var output = getElement(mode + "-output");
+          output.classList.remove("is-empty");
+          output.innerHTML = "";
+          Array.from(text).forEach(function (character, index) {
+            var span = document.createElement("span");
+            span.className = "char";
+            span.style.animationDelay = Math.min(index * 0.018, 0.55) + "s";
+            span.textContent = character;
+            output.appendChild(span);
+          });
+          getElement(mode + "-output-meta").textContent = text.length + " characters · key " + key;
+          getElement(mode + "-status").textContent = "ready";
+          getElement(mode + "-status-dot").classList.add("is-ready");
+          output.setAttribute("data-copy-text", text);
+          if (withPreview) {
+            var preview = getElement(mode + "-preview");
+            preview.innerHTML = "";
+            var label = document.createElement("span");
+            label.className = "preview-label";
+            label.textContent = "Live character preview · shift +" + key;
+            var original = document.createElement("span");
+            original.className = "preview-original";
+            original.textContent = text.slice(0, 46) || "(empty input)";
+            var arrow = document.createElement("span");
+            arrow.className = "preview-arrow";
+            arrow.textContent = "→";
+            var result = document.createElement("span");
+            result.textContent = shiftText(text, key).slice(0, 46) || "(empty input)";
+            preview.appendChild(label);
+            preview.appendChild(original);
+            preview.appendChild(arrow);
+            preview.appendChild(result);
+            preview.classList.add("is-visible");
+          }
+        }
+
+        getElement("encrypt-button").addEventListener("click", function () {
+          var text = getElement("encrypt-input").value;
+          var key = setKey("encrypt", getElement("encrypt-key-number").value);
+          showOutput("encrypt", shiftText(text, key), key, true);
+        });
+
+        getElement("decrypt-button").addEventListener("click", function () {
+          var text = getElement("decrypt-input").value;
+          var key = setKey("decrypt", getElement("decrypt-key-number").value);
+          showOutput("decrypt", decryptText(text, key), key, false);
+        });
+
+        var commonWords = {
+          "the": 8, "be": 3, "to": 4, "of": 4, "and": 7, "a": 2, "in": 5, "that": 5, "have": 3, "i": 2, "it": 4, "for": 5, "not": 4, "on": 4, "with": 5, "he": 3, "as": 4, "you": 6, "do": 3, "at": 3, "this": 5, "but": 4, "his": 3, "by": 3, "from": 4, "they": 4, "we": 4, "say": 2, "her": 3, "she": 3, "or": 3, "an": 3, "will": 4, "my": 3, "one": 3, "all": 4, "would": 3, "there": 4, "their": 4, "what": 4, "so": 3, "up": 2, "out": 3, "if": 3, "about": 3, "who": 3, "get": 3, "which": 3, "go": 2, "me": 3, "when": 3, "make": 3, "can": 4, "like": 3, "time": 3, "no": 3, "just": 3, "him": 3, "know": 3, "take": 3, "people": 3, "into": 3, "year": 3, "your": 5, "good": 3, "some": 3, "could": 3, "them": 4, "see": 3, "other": 3, "than": 3, "then": 3, "now": 3, "look": 3, "only": 3, "come": 3, "its": 3, "over": 3, "think": 3, "also": 3, "back": 3, "after": 3, "use": 3, "two": 3, "how": 3, "our": 3, "work": 3, "first": 3, "well": 3, "way": 3, "even": 3, "new": 3, "want": 3, "because": 3, "these": 3, "give": 3, "day": 3, "most": 3, "us": 3, "hello": 8, "world": 8, "meet": 6, "message": 5, "secret": 6, "cipher": 5, "library": 5, "nine": 5, "attack": 4, "safe": 4, "project": 4, "network": 4, "security": 4, "classical": 4, "quick": 3, "brown": 3, "fox": 3, "jump": 3, "over": 3, "lazy": 3, "dog": 3
+        };
+        var commonBigrams = ["th", "he", "in", "er", "an", "re", "on", "at", "en", "nd", "ti", "es", "or", "te", "of", "ed", "is", "it", "al", "ar", "st", "to", "nt", "ng", "se", "ha", "as", "ou", "io", "le", "ve", "co", "me", "de", "hi", "ri", "ro", "ic", "ne", "ea", "ra", "ce", "li", "ch", "ll", "be", "ma", "si", "om", "ur"];
+
+        function scoreEnglish(text) {
+          var lower = text.toLowerCase();
+          var words = lower.match(/[a-z]+/g) || [];
+          var score = 0;
+          words.forEach(function (word) { if (commonWords[word]) score += commonWords[word]; });
+          commonBigrams.forEach(function (bigram) { var index = 0; while ((index = lower.indexOf(bigram, index)) !== -1) { score += 0.18; index += 1; } });
+          var letters = (lower.match(/[a-z]/g) || []).length;
+          if (letters > 8) score += Math.min(letters / 100, 1);
+          return score;
+        }
+
+        function addResultRow(candidate, isLikely, index) {
+          var row = document.createElement("tr");
+          row.style.animationDelay = (index * 0.045) + "s";
+          if (isLikely) row.className = "is-likely";
+          var keyCell = document.createElement("td");
+          var keyPill = document.createElement("span");
+          keyPill.className = "key-pill";
+          keyPill.textContent = String(candidate.key).padStart(2, "0");
+          keyCell.appendChild(keyPill);
+          var resultCell = document.createElement("td");
+          resultCell.textContent = candidate.text || "(empty result)";
+          if (isLikely) {
+            var badge = document.createElement("span");
+            badge.className = "likely-badge";
+            badge.textContent = "✓ most likely";
+            resultCell.appendChild(badge);
+          }
+          row.appendChild(keyCell);
+          row.appendChild(resultCell);
+          getElement("results-body").appendChild(row);
+        }
+
+        function renderFrequencyView(text) {
+          var counts = {};
+          var total = 0;
+          Array.from(text.toLowerCase()).forEach(function (character) {
+            if (character >= "a" && character <= "z") {
+              counts[character] = (counts[character] || 0) + 1;
+              total += 1;
+            }
+          });
+          var card = getElement("frequency-card");
+          var bars = getElement("frequency-bars");
+          bars.innerHTML = "";
+          if (!total) {
+            bars.innerHTML = "<span class=\"frequency-empty\">No letters found in this input.</span>";
+            getElement("frequency-total").textContent = "0 letters";
+            card.classList.add("is-visible");
+            return;
+          }
+          var ranked = Object.keys(counts).sort(function (a, b) { return counts[b] - counts[a] || a.localeCompare(b); }).slice(0, 8).map(function (letter) { return { letter: letter, count: counts[letter] }; });
+          var max = ranked[0].count;
+          ranked.forEach(function (item, index) {
+            var row = document.createElement("div");
+            row.className = "frequency-row";
+            var letter = document.createElement("span");
+            letter.className = "frequency-letter";
+            letter.textContent = item.letter.toUpperCase();
+            var track = document.createElement("span");
+            track.className = "frequency-track";
+            var fill = document.createElement("span");
+            fill.style.width = ((item.count / max) * 100) + "%";
+            fill.style.animationDelay = (index * 45) + "ms";
+            track.appendChild(fill);
+            var count = document.createElement("span");
+            count.className = "frequency-count";
+            count.textContent = String(item.count);
+            row.appendChild(letter);
+            row.appendChild(track);
+            row.appendChild(count);
+            bars.appendChild(row);
+          });
+          getElement("frequency-total").textContent = total + " letters · top " + ranked.length;
+          card.classList.add("is-visible");
+        }
+
+        getElement("breaker-button").addEventListener("click", function () {
+          var input = getElement("breaker-input").value;
+          var button = getElement("breaker-button");
+          var scanCard = getElement("scan-card");
+          var body = getElement("results-body");
+          var candidates = Array.from({ length: 26 }, function (_, key) { var text = decryptText(input, key); return { key: key, text: text, score: scoreEnglish(text) }; });
+          var likely = candidates.reduce(function (best, candidate) { return candidate.score > best.score ? candidate : best; }, candidates[0]);
+          renderFrequencyView(input);
+          body.innerHTML = "";
+          getElement("summary-card").classList.remove("is-visible");
+          getElement("results-hint").textContent = "Scanning 26 candidate keys…";
+          getElement("scan-copy").textContent = "Testing every possible shift against English patterns.";
+          getElement("scan-count").textContent = "0/26";
+          getElement("scan-progress").style.width = "0%";
+          scanCard.classList.add("is-scanning");
+          button.disabled = true;
+          button.innerHTML = "<span class=\"button-icon\">◌</span> Scanning…";
+          candidates.forEach(function (candidate, index) {
+            window.setTimeout(function () {
+              addResultRow(candidate, candidate.key === likely.key, index);
+              getElement("scan-count").textContent = (index + 1) + "/26";
+              getElement("scan-progress").style.width = (((index + 1) / 26) * 100) + "%";
+              if (index === 25) {
+                window.setTimeout(function () {
+                  scanCard.classList.remove("is-scanning");
+                  button.disabled = false;
+                  button.innerHTML = "<span class=\"button-icon\">⌁</span> Break cipher";
+                  getElement("scan-copy").textContent = "Scan complete. Ranked by English likelihood.";
+                  getElement("results-hint").textContent = "26 keys tested · 1 likely match highlighted";
+                  getElement("summary-result").textContent = likely.text || "(empty input)";
+                  getElement("summary-key").textContent = "KEY " + likely.key + " · ENGLISH SCORE " + likely.score.toFixed(1);
+                  getElement("summary-result").setAttribute("data-copy-text", likely.text);
+                  getElement("summary-card").classList.add("is-visible");
+                }, 130);
+              }
+            }, index * 48);
+          });
+        });
+
+        function showToast(message) {
+          getElement("toast-message").textContent = message;
+          getElement("toast").classList.add("is-visible");
+          window.clearTimeout(toastTimer);
+          toastTimer = window.setTimeout(function () { getElement("toast").classList.remove("is-visible"); }, 2200);
+        }
+
+        function copyText(text) {
+          if (!text) { showToast("Nothing to copy yet"); return; }
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(function () { showToast("Copied to clipboard"); }).catch(function () { fallbackCopy(text); });
+          } else { fallbackCopy(text); }
+        }
+
+        function fallbackCopy(text) {
+          var helper = document.createElement("textarea");
+          helper.value = text;
+          document.body.appendChild(helper);
+          helper.select();
+          try { document.execCommand("copy"); showToast("Copied to clipboard"); } catch (error) { showToast("Select the result to copy"); }
+          document.body.removeChild(helper);
+        }
+
+        document.querySelectorAll("[data-copy-target]").forEach(function (button) {
+          button.addEventListener("click", function () {
+            var target = getElement(button.getAttribute("data-copy-target"));
+            var text = target.getAttribute("data-copy-text") || target.textContent.trim();
+            copyText(text);
+          });
+        });
+      }());
+    </script>
+  </body>
+</html>
